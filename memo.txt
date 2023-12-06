@@ -1,0 +1,86 @@
+pip install torch-scatter -f https://pytorch-geometric.com/whl/torch-1.8.0+cpu.html
+        python -m pip install torch-sparse -f https://pytorch-geometric.com/whl/torch-1.8.0+cpu.html
+        python -m pip install torch-cluster -f https://pytorch-geometric.com/whl/torch-1.8.0+cpu.html
+        python -m pip install torch-spline-conv -f https://pytorch-geometric.com/whl/torch-1.8.0+cpu.html
+        python -m pip install torch-geometric
+
+
+biopython              1.81
+blinker                1.4
+certifi                2023.11.17
+charset-normalizer     3.3.2
+chart-studio           1.1.0
+command-not-found      0.3
+cryptography           3.4.8
+cycler                 0.11.0
+dbus-python            1.2.18
+DeepRank-GNN           0.1.4
+distro                 1.7.0
+distro-info            1.1+ubuntu0.1
+fonttools              4.38.0
+freesasa               2.2.1
+googledrivedownloader  0.4
+h5py                   3.8.0
+httplib2               0.20.2
+idna                   3.6
+importlib-metadata     4.6.4
+isodate                0.6.1
+jeepney                0.7.1
+Jinja2                 3.1.2
+joblib                 1.3.2
+keyring                23.5.0
+kiwisolver             1.4.5
+launchpadlib           1.10.16
+lazr.restfulclient     0.14.4
+lazr.uri               1.0.6
+markov-clustering      0.0.6.dev0
+MarkupSafe             2.1.3
+matplotlib             3.5.3
+more-itertools         8.10.0
+netifaces              0.11.0
+networkx               2.6.3
+numpy                  1.21.6
+oauthlib               3.2.0
+packaging              23.2
+pandas                 1.3.5
+pdb2sql                0.5.3
+Pillow                 9.5.0
+pip                    22.0.2
+plotly                 5.18.0
+psutil                 5.9.6
+PyGObject              3.42.1
+PyJWT                  2.3.0
+pyparsing              2.4.7
+python-apt             2.4.0+ubuntu2
+python-dateutil        2.8.2
+python-louvain         0.16
+pytz                   2023.3.post1
+PyYAML                 5.4.1
+rdflib                 6.3.2
+requests               2.31.0
+retrying               1.3.4
+scikit-learn           1.0.2
+scipy                  1.7.3
+SecretStorage          3.3.1
+setuptools             59.6.0
+six                    1.16.0
+sklearn                0.0.post11
+systemd-python         234
+tenacity               8.2.3
+threadpoolctl          3.1.0
+torch                  1.8.0+cpu
+torch-cluster          1.5.9
+torch-geometric        1.7.2
+torch-scatter          2.1.1
+torch-sparse           0.6.12
+torch-spline-conv      1.2.2
+torchvision            0.9.0+cpu
+tqdm                   4.66.1
+typing_extensions      4.7.1
+ubuntu-advantage-tools 8001
+ufw                    0.36.1
+unattended-upgrades    0.1
+urllib3                2.0.7
+wadllib                1.3.6
+wheel                  0.37.1
+zipp                   1.0.0
