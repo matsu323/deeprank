@@ -7,8 +7,8 @@ import networkx as nx
 
 from pdb2sql import interface
 
-from .tools import BioWrappers, PSSM, BSA
-from .Graph import Graph
+from tools import BioWrappers, PSSM, BSA
+from Graph import Graph
 
 
 class ResidueGraph(Graph):
@@ -69,7 +69,7 @@ class ResidueGraph(Graph):
         #iencod += 1
 
         # check if external execs are installed
-        self.check_execs()
+        # self.check_execs()
 
         # create the sqldb
         db = interface(self.pdb)
@@ -307,8 +307,7 @@ class ResidueGraph(Graph):
             for i2 in range(i1+1, nn):
                 xyz2 = np.array(
                     db.get('x,y,z', chainID=nodes[i2][0], resSeq=nodes[i2][1]))
-                d2 = -2*np.dot(xyz1, xyz2.T) + np.sum(xyz1**2,
-                                                      axis=1)[:, None] + np.sum(xyz2**2, axis=1)
+                d2 = -2*np.dot(xyz1, xyz2.T) + np.sum(xyz1**2,axis=1)[:, None] + np.sum(xyz2**2, axis=1)
                 if np.any(d2 < cutoff**2):
                     edges.append((nodes[i1], nodes[i2]))
                     dist.append(np.sqrt(np.min(d2)))
