@@ -14,87 +14,7 @@ pdb_path = './data/pdb/1ATN/'
 pssm_path = './data/pssm/1ATN/'
 ref = './data/ref/1ATN/'
 
-# add_target(graph_path='.', target_name='bin_class',
-#       target_list='./data/target/1ATN/dummy_target.csv')
-# from deeprank_gnn.GraphGenMP import GraphHDF5
-# pdb_path = './data/pdb/1ATN/' # path to the docking model in PDB format
-# pssm_path = './data/pssm/1ATN/' # path to the pssm files
-# GraphHDF5(pdb_path=pdb_path, pssm_path=pssm_path,
-#          graph_type='residue', outfile='1ATN_residue.hdf5', nproc=4)
-# import networkx as nx
-# file='1ATN_residue.hdf5'
-# hdf5 = h5py.File(file,'r+')
-# g = Graph()
-# g.h52nx(f5name=file , mol='1ATN_10w', molgrp=None)
-# molgrp=hdf5['1ATN_10w']
-# for e in g.nx.edges:
 
-#     print(g.nx.edges[('A', '443', 'VAL'), ('B', '45', 'LEU')])
-    
-# print(len(molgrp["nodes"][()]))
-# H=nx.line_graph(g.nx)
-# cnt=0
-# for n in H.nodes:
-#     cnt+=1
-#     if cnt <2:
-#         H.nodes[n]["dist"]=g.nx.edges[n]["dist"]
-#         print( n,g.nx.edges[n])
-# for e in H.edges:
-#         e1,e2=e
-#         if e1[0]==e2[0]:
-#             nodej=e1[0]
-#             nodei=e1[1]
-#             nodek=e2[1]
-#         elif e1[0]==e2[1]:
-#             nodej=e1[0]
-#             nodei=e1[1]
-#             nodek=e2[0]
-#         elif e1[1]==e2[0]:
-#             nodej=e1[1]
-#             nodei=e1[0]
-#             nodek=e2[1]
-#         else:
-#             nodej=e1[1]
-#             nodei=e1[0]
-#             nodek=e2[0]
-#         posi=g.nx.nodes[nodei]['pos']
-#         posj=g.nx.nodes[nodej]['pos']
-#         posk=g.nx.nodes[nodek]['pos']
-#         vector1=posi-posj
-#         vector2=posk-posj
-#         i = np.inner(vector1, vector2)
-#         n = np.linalg.norm(vector1) * np.linalg.norm(vector2)
-#         c = i / n
-#         H.edges[e]['angle']=c
-#         H.edges[e]['angle_type']=int((c+1)*7//2)
-#         print(H.edges[e]['angle_type'])
-# # pos = g.nodes[node]['pos']
-# print(g.get_score('bin_class'))
-# print(pos[0])
-# key="bin_class"
-# print(molgrp['score/bin_class'][()])
-
-# G = nx.path_graph(4)
-# G.add_edges_from((u, v, {"tot": u+v}) for u, v in G.edges)
-# G.edges(data=True)
-# G=GraphHDF5(pdb_path=pdb_path,graph_type='residue', outfile='1ATN_residue.hdf5', nproc=4)
-# print(G.get_graph(pdb_path=pdb_path,graph_type='residue', outfile='1ATN_residue.hdf5', nproc=4))
-# H = nx.line_graph(G._get_one_graph(name, pssm, ref, biopython))
-# H.add_nodes_from((node, G.edges[node]) for node in H)
-# H.nodes(data=True)
-
-# from torch_scatter import scatter_mean
-# #  0 0 4 3 2,1 0   
-# #  0,2 4 1,3  0 0 0
-# src = torch.Tensor([[2, 0, 1, 4, 3], 
-#                     [0, 2, 1, 3, 4]])
-# index = torch.tensor([[4, 5, 4, 2, 3], 
-#                       [0, 0, 2, 2, 1]])
-# out = src.new_zeros((2, 6))
-
-# out = scatter_mean(src, index, out=out, dim=1)
-
-# print(out)
 import torch
 from torch.nn import Parameter
 import torch.nn.functional as F
@@ -112,11 +32,12 @@ from torch_geometric.nn import max_pool_x
 from torch_geometric.data import DataLoader
 
 # deeprank_gnn import
-from deeprank_gnn.community_pooling import get_preloaded_cluster, community_pooling
-from deeprank_gnn.NeuralNet import NeuralNet
-from deeprank_gnn.DataSet import HDF5DataSet, PreCluster
+from community_pooling import get_preloaded_cluster, community_pooling
+from DataSet import HDF5DataSet, PreCluster
 from NeuralNet import NeuralNet
 # from ginet import GINet
+from spatiallinegraph import LineGraph
+
 
 
 
@@ -129,87 +50,103 @@ class GINetConvLayer(torch.nn.Module):
                  in_channels,
                  out_channels,
                  number_edge_features=1,
+                 num_angle=7,
                  bias=False):
 
         super(GINetConvLayer, self).__init__()
 
         self.in_channels = in_channels
         self.out_channels = out_channels
+        self.num_angle=num_angle
+        self.edge_fdim=in_channels*2+1
 
         self.fc = nn.Linear(
             self.in_channels, self.out_channels, bias=bias)
         self.fc_edge_attr = nn.Linear(
-            number_edge_features, self.in_channels, bias=bias)
-        self.fc_attention = nn.Linear(
-            2 * self.out_channels + self.in_channels, 1, bias=bias)
+            2 * self.in_channels + number_edge_features, self.in_channels, bias=bias)
+        # self.fc_attention = nn.Linear(
+        #     2 * self.out_channels + self.in_channels, 1, bias=bias)
+        self.message = nn.Linear((num_angle)*(self.edge_fdim*2), self.out_channels)
+        # self.fc_relation=nn.Linear(
+        #     self.in_channels*7, self.out_channels, bias=bias)
+
+        self.linear=nn.Linear((num_angle)*2, self.out_channels)
         self.reset_parameters()
 
     def reset_parameters(self):
 
         size = self.in_channels
         uniform(size, self.fc.weight)
-        uniform(size, self.fc_attention.weight)
+        # uniform(size, self.fc_attention.weight)
         uniform(size, self.fc_edge_attr.weight)
 
-    def cal_adj(self,edge_index,message):
-        N=torch.max(edge_index).item()
-        adjacency_matrix=np.zeros((N+1,N+1))
-        rows = edge_index[0]
-        cols = edge_index[1]
-        # print(adjacency_matrix.shape)
-        # calmessage=[i.detach().numpy() for i in message]
-        for i in range(len(rows)):
-            
-            row=rows[i].item()
-            col=cols[i].item()
-            # print(row,col)
-            adjacency_matrix[row][col] = 1
-            adjacency_matrix[col][row] = 1
-        return adjacency_matrix
-    def forward(self, x, edge_index, edge_attr):
+    
+    def forward(self, x, edge_index, edge_attr,pos):
 
         row, col = edge_index
         num_node = len(x)
-        edge_attr = edge_attr.unsqueeze(
-            -1) if edge_attr.dim() == 1 else edge_attr
+        edge_attr = edge_attr.unsqueeze(-1) if edge_attr.dim() == 1 else edge_attr
 
         # xcol = self.fc(x[col])
         # xrow = self.fc(x[row])
         xcol = x[col]
         xrow = x[row]
 
-        ed = self.fc_edge_attr(edge_attr)
+        
         # create edge feature by concatenating node feature
-        # alpha = torch.cat([xrow, xcol, ed], dim=1)
-        # alpha = self.fc_attention(alpha)
+        # alpha = torch.cat([xrow, xcol, ed], dim=1) this 表現edge
+        # alpha = self.fc_attention(alpha) edgeごとの重みが１つの値ででる
         # alpha = F.leaky_relu(alpha)
 
-        # alpha = F.softmax(alpha, dim=1)
-        # h = alpha * xcol
-        # torch.einsum()
+        # print(edge_attr.size(),row.size())
+        edge_f= torch.cat([xrow, xcol, edge_attr], dim=1)
+        # print(edge_f.size())
+        # ed = self.fc_edge_attr(edge_f)
+        #ここでエッジ更新
+        linegraph=LineGraph(edge_index,edge_f,pos,num_nodes=num_node,input_dim=self.in_channels*2+1, output_dim=self.out_channels)
+        linegraph.get_graph(edge_index,edge_f)
+        message=linegraph.message().t()
+        print(message.size())
+        print(self.num_angle*(self.edge_fdim*2))
+        # message=message.view(len(edge_index[0]),self.num_angle*2)
+        output = self.message(message)
 
-        # torch.cat([row,col])
-        out = torch.zeros(num_node, self.in_channels)#out_channnel=16
-        message = scatter_add(ed, row, dim=0, out=out)
-        message=message+scatter_add(ed, col, dim=0, out=out)#node*inchan
-        #col to row
-        node_f=scatter_add(xcol, row, dim=0, out=out)
-        node_f = node_f+scatter_add(xrow, col, dim=0, out=out)
-        message=self.fc(message)
-        node_f=self.fc(node_f)
-        z=node_f+message
-        # adj=self.cal_adj(edge_index,ed)
-        # print(edge_index.shape,alpha.shape)
-        # print(self.cal_adj(edge_index,ed))
+        # print(output.size())
+        # output
+        # output=0
+        
+        #ここまでエッジ更新
+        num_relation=1
+        edge_index_2=0
+        edge_hidden =output
+        # print(num_node)
+        assert edge_index.max() < num_node
 
-        return z
+        node_out = edge_index[1] 
+        # + edge_index_2
+        node_out=node_out.view(1,-1)
+        node_out=node_out.expand(self.out_channels,-1).t()
+        # print(node_out.size(),edge_hidden.size())
+        # print(node_out)
+        out=torch.zeros(num_node,self.out_channels)
+        update = scatter_add(edge_hidden , node_out, dim=0,out=out)
+        # print(update.size())
+        # torch.einsum("ij,jk->",edge_hidden,node_out)
+        # update = update.view(num_node, num_relation * edge_hidden.shape[1])
+        # print(update.size())
+        # update = self.linear(update)
+        # update = self.layers[i].activation(update)
+        # hidden = hidden + update
+        # edge_input = edge_hidden
+        
+        return update
 
     def __repr__(self):
         return '{}({}, {})'.format(self.__class__.__name__,
                                    self.in_channels,
                                    self.out_channels)
 
-
+    
 class GINet(torch.nn.Module):
     # input_shape -> number of node input features
     # output_shape -> number of output value per graph
@@ -234,32 +171,32 @@ class GINet(torch.nn.Module):
 
         # EXTERNAL INTERACTION GRAPH
         # first conv block
+        # print(data.pos)
         data.x = act(self.conv1(
-            data.x, data.edge_index, data.edge_attr))
-        cluster = get_preloaded_cluster(data.cluster0, data.batch)
-        data = community_pooling(cluster, data)
+            data.x, data.edge_index, data.edge_attr,data.pos))
+        # cluster = get_preloaded_cluster(data.cluster0, data.batch)
+        # data = community_pooling(cluster, data)
 
         # second conv block
         data.x = act(self.conv2(
-            data.x, data.edge_index, data.edge_attr))
-        cluster = get_preloaded_cluster(data.cluster1, data.batch)
-        x, batch = max_pool_x(cluster, data.x, data.batch)
+            data.x, data.edge_index, data.edge_attr,data.pos))
+        # cluster = get_preloaded_cluster(data.cluster1, data.batch)
+        x, batch = data.x, data.batch
 
         # INTERNAL INTERACTION GRAPH
         # first conv block
         data_ext.x = act(self.conv1_ext(
-            data_ext.x, data_ext.edge_index, data_ext.edge_attr))
-        cluster = get_preloaded_cluster(
-            data_ext.cluster0, data_ext.batch)
-        data_ext = community_pooling(cluster, data_ext)
+            data_ext.x, data_ext.edge_index, data_ext.edge_attr,data.pos))
+        # cluster = get_preloaded_cluster(
+        #     data_ext.cluster0, data_ext.batch)
+        # data_ext = community_pooling(cluster, data_ext)
 
         # second conv block
         data_ext.x = act(self.conv2_ext(
-            data_ext.x, data_ext.edge_index, data_ext.edge_attr))
-        cluster = get_preloaded_cluster(
-            data_ext.cluster1, data_ext.batch)
-        x_ext, batch_ext = max_pool_x(
-            cluster, data_ext.x, data_ext.batch)
+            data_ext.x, data_ext.edge_index, data_ext.edge_attr,data.pos))
+        # cluster = get_preloaded_cluster(
+        #     data_ext.cluster1, data_ext.batch)
+        x_ext, batch_ext = data_ext.x, data_ext.batch
 
         # FC
         x = scatter_mean(x, batch, dim=0)
@@ -277,6 +214,7 @@ database = './1ATN_residue.hdf5'
 edge_feature=['dist']
 node_feature=['type', 'polarity', 'bsa']
             #  'depth', 'hse', 'ic', 'pssm'
+pos=['pos']
 target='bin_class'
 task='class' 
 batch_size=2
@@ -292,6 +230,7 @@ model = NeuralNet(database, GINet,
                lr=lr,
                batch_size=batch_size,
                shuffle=shuffle,
+               pos=pos
                )
 add_target(graph_path='.', target_name='bin_class',
        target_list='./data/target/1ATN/dummy_target.csv')
