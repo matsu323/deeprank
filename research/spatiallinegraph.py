@@ -83,7 +83,7 @@ class LineGraph(object):
         node_j=node_in[edge_out]
         self.fea=torch.cat([self.x[edge_in],self.x[edge_out]],dim=1)
 
-        print(self.fea.size())
+        # print(self.fea.size())
         return self.fea
     # def forward(self):
     #     self.message(self)
@@ -103,7 +103,7 @@ class LineGraph(object):
             
             node_out=torch.cat([self.edge_index,self.edge_attr.reshape(1,-1)],0)
             # print(torch.where(node_out[2:,]==0,torch.zeros(1),torch.ones(1)))
-            
+            fea=self.fea_torelation(i,self.fea.t(),node_out)
             node_out=torch.where(node_out[2:,]==i,node_out,torch.zeros_like(node_out))
             # print(node_out.size(),node_out)
             out=torch.zeros(self.input_dim*2,len(self.x))
@@ -112,7 +112,8 @@ class LineGraph(object):
             # print(node_out[1:-1].expand(2,-1).size(),self.fea.t().size(),1211)
             # print(self.fea.t().size(),node_out[1:-1].expand(self.input_dim*2,-1).size())
             # print(node_out[1:-1])
-            update= scatter_add(self.fea.t(),node_out[1:-1].expand(self.input_dim*2,-1),dim=1,out=out)
+            
+            update= scatter_add(fea,node_out[1:-1].expand(self.input_dim*2,-1),dim=1,out=out)
             if i==1:
                 output=update
             else:
@@ -120,3 +121,11 @@ class LineGraph(object):
             # print(output.size())
             # print(update.size())
         return output
+    def fea_torelation(self,i,fea,node_out):
+        relation=torch.cat([fea,node_out[2:,]],0)
+        relation=torch.where(relation[-1:,]==i,relation,torch.zeros_like(relation))
+        # print(fea.size())
+        relation=relation[:-1,]
+        #print(relation.size())
+        return relation
+

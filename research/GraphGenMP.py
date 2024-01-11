@@ -8,8 +8,8 @@ import multiprocessing as mp
 from functools import partial
 import pickle
 
-from .ResidueGraph import ResidueGraph
-from .Graph import Graph
+from ResidueGraph import ResidueGraph
+from Graph import Graph
 
 
 class GraphHDF5(object):
@@ -106,7 +106,7 @@ class GraphHDF5(object):
                         g.nx2h5(f5)
                     except Exception as e:
                         print(
-                            'Issue encountered while computing graph ', name)
+                            'Issue encountered while computing graph 21', name)
                         print(e)
                     f.close()
                     os.remove(name)
@@ -130,8 +130,10 @@ class GraphHDF5(object):
             try:
                 graphs.append(self._get_one_graph(
                     name, pssm, ref, biopython))
+                
             except Exception as e:
-                print('Issue encountered while computing graph ', name)
+                print('Issue encountered while computing graph 0', name)
+                print(pssm[name])
                 print(e)
 
         with h5py.File(outfile, 'w') as f5:
@@ -139,7 +141,7 @@ class GraphHDF5(object):
                 try:
                     g.nx2h5(f5)
                 except Exception as e:
-                    print('Issue encountered while storing graph ', g.pdb)
+                    print('Issue encountered while storing graph 1', g.pdb)
                     print(e)
 
     @staticmethod
@@ -164,7 +166,7 @@ class GraphHDF5(object):
             f.close()
 
         except Exception as e:
-            print('Issue encountered while storing graph ', name)
+            print('Issue encountered while storing graph 2', name)
             print(e)
 
     @staticmethod
@@ -192,6 +194,7 @@ class GraphHDF5(object):
         else:
             pssmA = os.path.join(pssm_path, base_name+'.A.pdb.pssm')
             pssmB = os.path.join(pssm_path, base_name+'.B.pdb.pssm')
+            # print(pssm_path, base_name)
             if os.path.isfile(pssmA) and os.path.isfile(pssmB):
                 pssm = {'A': pssmA, 'B': pssmB}
             else:
@@ -203,3 +206,42 @@ class GraphHDF5(object):
                     raise FileNotFoundError(
                         'PSSM file for ' + mol_name + ' not found')
         return pssm
+    def get_graph(self, pdb_path, ref_path=None, graph_type='residue', pssm_path=None,
+                 select=None, outfile='graph.hdf5', nproc=1, use_tqdm=True, tmpdir='./',
+                 limit=None, biopython=False):
+        # get the list of PDB names
+        pdbs = list(filter(lambda x: x.endswith(
+            '.pdb'), os.listdir(pdb_path)))
+        if select is not None:
+            pdbs = list(filter(lambda x: x.startswith(select), pdbs))
+
+        # get the full path of the pdbs
+        pdbs = [os.path.join(pdb_path, name) for name in pdbs]
+        if limit is not None:
+            if isinstance(limit, list):
+                pdbs = pdbs[limit[0]:limit[1]]
+            else:
+                pdbs = pdbs[:limit]
+
+        # get the pssm data
+        pssm = {}
+        for p in pdbs:
+            base = os.path.basename(p)
+            mol_name = os.path.splitext(base)[0]
+            base_name = mol_name.split('_')[0]
+            if pssm_path is not None:
+                pssm[p] = self._get_pssm(
+                    pssm_path, mol_name, base_name)
+            else:
+                pssm[p] = None
+
+        # get the ref path
+        if ref_path is None:
+            ref = None
+        else:
+            ref = os.path.join(ref_path, base_name+'.pdb')
+
+        # compute all the graphs on 1 core and directly
+        # store the graphs the HDF5 file
+        # allgraphs = _get_one_graph
+        # return allgraphs

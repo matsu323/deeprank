@@ -62,10 +62,11 @@ def PreCluster(dataset, method):
                 print('{} not found'.format(mol))
             f5.close()
             continue
-
+        print(fname)
         f5 = h5py.File(fname, 'a')
         grp = f5[mol]
-
+        print(grp)
+#koko
         clust_grp = grp.require_group('clustering')
 
         if method.lower() in clust_grp:
@@ -93,7 +94,7 @@ class HDF5DataSet(Dataset):
     def __init__(self, root='./', database=None, transform=None, pre_transform=None,
                  dict_filter=None, target=None, tqdm=True, index=None,
                  node_feature='all', edge_feature=['dist'], clustering_method='mcl',
-                 edge_feature_transform=lambda x: np.tanh(-x/2+2)+1):
+                 edge_feature_transform=lambda x: np.tanh(-x/2+2)+1,pos=['pos']):
         """Class from which the hdf5 datasets are loaded.
 
         Args:
@@ -123,11 +124,11 @@ class HDF5DataSet(Dataset):
         self.index = index
         self.node_feature = node_feature
         self.edge_feature = edge_feature
-
+        
         self.edge_feature_transform = edge_feature_transform
 
         self.clustering_method = clustering_method
-
+        
         # check if the files are ok
         self.check_hdf5_files()
 
@@ -330,7 +331,7 @@ class HDF5DataSet(Dataset):
         # pos
         pos = torch.tensor(grp['node_data/pos/']
                            [()], dtype=torch.float).contiguous()
-
+        #ここがdata形式
         # load
         data = Data(x=x,
                     edge_index=edge_index,
@@ -356,11 +357,14 @@ class HDF5DataSet(Dataset):
                     data.cluster1 = torch.tensor(
                         grp['clustering/' + self.clustering_method + '/depth_1'][()], dtype=torch.long)
                 else:
-                    print('WARNING: no cluster detected')
+                    print('WARNING: no cluster detected 1')
             else:
-                print('WARNING: no cluster detected')
+                print('WARNING: no cluster detected 2')
         else:
-            print('WARNING: no cluster detected')
+            print('WARNING: no cluster detected3')
+
+        #ここからlinegraph追加
+        
 
         f5.close()
         return data

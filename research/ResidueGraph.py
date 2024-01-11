@@ -217,9 +217,11 @@ class ResidueGraph(Graph):
         bsa_data = bsa_calc.bsa_data
 
         # biopython data
-        model = BioWrappers.get_bio_model(db.pdbfile)
+        # print(db.pdbfile)
+        
 
         if self.biopython == True:
+            model = BioWrappers.get_bio_model(db.pdbfile)
             ResDepth = BioWrappers.get_depth_contact_res(
                 model, self.nx.nodes)
 
@@ -247,13 +249,14 @@ class ResidueGraph(Graph):
 
             if self.pssm is not None:
                 data = PSSM.get_pssm_data(node_key, self.pssm)
+                # print(data)
                 self.nx.nodes[node_key]['pssm'] = data
                 self.nx.nodes[node_key]['cons'] = data[self.pssm_pos[resName]]
                 self.nx.nodes[node_key]['ic'] = PSSM.get_ic_data(
                     node_key, self.ic)
 
             if self.biopython == True:
-
+                
                 self.nx.nodes[node_key]['depth'] = ResDepth[node_key] if node_key in ResDepth else 0
                 bio_key = (chainID, resSeq)
                 self.nx.nodes[node_key]['hse'] = HSE[bio_key] if bio_key in HSE else (

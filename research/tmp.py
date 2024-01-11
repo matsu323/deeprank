@@ -106,8 +106,8 @@ class GINetConvLayer(torch.nn.Module):
         linegraph=LineGraph(edge_index,edge_f,pos,num_nodes=num_node,input_dim=self.in_channels*2+1, output_dim=self.out_channels)
         linegraph.get_graph(edge_index,edge_f)
         message=linegraph.message().t()
-        print(message.size())
-        print(self.num_angle*(self.edge_fdim*2))
+        # print(message.size())
+        # print(self.num_angle*(self.edge_fdim*2))
         # message=message.view(len(edge_index[0]),self.num_angle*2)
         output = self.message(message)
 
@@ -209,32 +209,7 @@ class GINet(torch.nn.Module):
 
         return x
     
-database = './1ATN_residue.hdf5'
 
-edge_feature=['dist']
-node_feature=['type', 'polarity', 'bsa']
-            #  'depth', 'hse', 'ic', 'pssm'
-pos=['pos']
-target='bin_class'
-task='class' 
-batch_size=2
-shuffle=True
-lr=0.001
-
-model = NeuralNet(database, GINet,
-               node_feature=node_feature,
-               edge_feature=edge_feature,
-               target=target,
-               index=None,
-               task=task, 
-               lr=lr,
-               batch_size=batch_size,
-               shuffle=shuffle,
-               pos=pos
-               )
-add_target(graph_path='.', target_name='bin_class',
-       target_list='./data/target/1ATN/dummy_target.csv')
-model.train(nepoch=1,  hdf5='output.hdf5')
 # model.plot_loss(name='plot_loss')
 
 # train_metrics = model.get_metrics('train')

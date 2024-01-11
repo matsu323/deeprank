@@ -18,12 +18,13 @@ from Metrics import Metrics
 class NeuralNet(object):
 
     def __init__(self, database, Net,
-                 node_feature=['type', 'polarity', 'bsa'],
+                 node_feature=['type', 'polarity', 'bsa','depth', 'hse', 'ic', 'pssm'],
                  edge_feature=['dist'], target='irmsd', lr=0.01,
                  batch_size=32, percent=[1.0, 0.0],
                  database_eval=None, index=None, class_weights=None, task=None,
                  classes=[0, 1], threshold=None,
-                 pretrained_model=None, shuffle=True, outdir='./', cluster_nodes='mcl', transform_sigmoid=False):
+                 pretrained_model=None, shuffle=True, outdir='./', cluster_nodes='mcl', transform_sigmoid=False,
+                 pos=['pos']):
         """Class from which the network is trained, evaluated and tested
 
         Args:
@@ -53,9 +54,6 @@ class NeuralNet(object):
             outdir (str, optional): output directory. Defaults to ./
             cluster_nodes (bool, optional): perform node clustering ('mcl' or 'louvain' algorithm). Default to 'mcl'.
         """
-        # load the input data or a pretrained model
-        # each named arguments is stored in a member vairable
-        # i.e. self.node_feature = node_feature
         if pretrained_model is None:
             for k, v in dict(locals()).items():
                 if k not in ['self', 'database', 'Net', 'database_eval']:
@@ -84,40 +82,6 @@ class NeuralNet(object):
                 print('the threshold for accuracy computation is set to 0.3')
                 self.threshold = 0.3
             self.load_model(database, Net, database_eval)
-
-        else:
-            self.load_params(pretrained_model)
-            self.outdir = outdir
-            self.load_pretrained_model(database, Net)
-
-    def load_pretrained_model(self, database, Net):
-        """
-        Loads pretrained model
-
-        Args:
-            database (str): path to hdf5 file(s)
-            Net (function): neural network
-        """
-        # Load the test set
-        test_dataset = HDF5DataSet(root='./', database=database,
-                                   node_feature=self.node_feature, edge_feature=self.edge_feature,
-                                   target=self.target, clustering_method=self.cluster_nodes)
-        self.test_loader = DataLoader(
-            test_dataset)
-        PreCluster(test_dataset, method=self.cluster_nodes)
-
-        print('Test set loaded')
-        self.put_model_to_device(test_dataset, Net)
-
-        self.set_loss()
-
-        # optimizer
-        self.optimizer = torch.optim.Adam(
-            self.model.parameters(), lr=self.lr)
-
-        # load the model and the optimizer state if we have one
-        self.optimizer.load_state_dict(self.opt_loaded_state_dict)
-        self.model.load_state_dict(self.model_load_state_dict)
 
     def load_model(self, database, Net, database_eval):
         """
@@ -191,7 +155,6 @@ class NeuralNet(object):
 
         self.valid_acc = []
         self.valid_loss = []
-
     def put_model_to_device(self, dataset, Net):
         """
         Puts the model on the available device
@@ -215,8 +178,7 @@ class NeuralNet(object):
 
         # regression mode
         if self.task == 'reg':
-            self.model = Net(dataset.get(
-                0).num_features, 1, self.num_edge_features).to(self.device)
+            self.model = Net(dataset.get(0).num_features, 1, self.num_edge_features).to(self.device)
 
         # classification mode
         elif self.task == 'class':
@@ -490,6 +452,8 @@ class NeuralNet(object):
         for data_batch in self.train_loader:
             data_batch = data_batch.to(self.device)
             self.optimizer.zero_grad()
+            #ここでグラフ情報がモデルに使われる
+
             pred = self.model(data_batch)
             pred, data_batch.y = self.format_output(
                 pred, data_batch.y)
@@ -583,20 +547,6 @@ class NeuralNet(object):
 
         return Metrics(pred, y, self.target, threshold, binary)
 
-    def compute_class_weights(self):
-
-        targets_all = []
-        for batch in self.train_loader:
-            targets_all.append(batch.y)
-
-        targets_all = torch.cat(targets_all).squeeze().tolist()
-        weights = torch.tensor([targets_all.count(i)
-                                for i in self.classes], dtype=torch.float32)
-        print('class occurences: {}'.format(weights))
-        weights = 1.0 / weights
-        weights = weights / weights.sum()
-        print('class weights: {}'.format(weights))
-        return weights
 
     @staticmethod
     def print_epoch_data(stage, epoch, loss, acc, time):

@@ -63,6 +63,7 @@ def get_depth_contact_res(model, contact_res):
     surface = get_surface(model)
     data = {}
     for r in contact_res:
+        print(model,r[0])
         chain = model[r[0]]
         res = chain[r[1]]
         data[r] = residue_depth(res, surface)

@@ -4,7 +4,7 @@ import numpy as np
 import networkx as nx
 from collections import OrderedDict
 import time
-from deeprank_gnn.tools.embedding import manifold_embedding
+from tools.embedding import manifold_embedding
 import community
 import markov_clustering as mc
 import h5py
@@ -286,16 +286,16 @@ class Graph(object):
             if method == 'louvain':
                 cluster = community.best_partition(gtmp)
 
-            elif method == 'mcl':
-                matrix = nx.to_scipy_sparse_matrix(gtmp)
-                # run MCL with default parameters
-                result = mc.run_mcl(matrix)
-                mcl_clust = mc.get_clusters(result)    # get clusters
-                cluster = {}
-                node_key = list(self.nx.nodes.keys())
-                for ic, c in enumerate(mcl_clust):
-                    for node in c:
-                        cluster[node_key[node]] = ic
+            # elif method == 'mcl':
+            #     matrix = nx.to_scipy_sparse_matrix(gtmp)
+            #     # run MCL with default parameters
+            #     result = mc.run_mcl(matrix)
+            #     mcl_clust = mc.get_clusters(result)    # get clusters
+            #     cluster = {}
+            #     node_key = list(self.nx.nodes.keys())
+            #     for ic, c in enumerate(mcl_clust):
+            #         for node in c:
+            #             cluster[node_key[node]] = ic
 
         # get the colormap for the clsuter line
         ncluster = np.max([v for _, v in cluster.items()])+1
@@ -378,10 +378,11 @@ class Graph(object):
             yaxis=dict(showgrid=False, zeroline=False, showticklabels=False)))
 
         if not disable_plot:
-            if iplot:
-                py.iplot(fig, filename=out)
-            else:
-                py.plot(fig)
+            # if iplot:
+            #     py.iplot(fig, filename=out)
+            # else:
+            #     py.plot(fig)
+            fig.show()
 
     def plotly_3d(self, out=None, offline=False, iplot=True, disable_plot=False):
         """Plots interface graph in 3D

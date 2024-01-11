@@ -46,8 +46,8 @@ def add_target(graph_path, target_name, target_list, sep=' '):
         assert os.path.isfile(graph_path[0])
 
     for hdf5 in graphs:
-        print(hdf5)
-        try:
+        # print(hdf5)
+        # try:
             f5 = h5py.File(hdf5, 'a')
 
             for model in f5.keys():
@@ -58,18 +58,20 @@ def add_target(graph_path, target_name, target_list, sep=' '):
                         model_gp.create_group('score')
 
                     group = f5['{}/score/'.format(model)]
-
+                    # print("ok")
                     if target_name in group.keys():
                         # Delete the target if it already existed
                         del group[target_name]
-
                     # Create the target
-                    group[target_name] = target_dict[model]
-
+                    # print(target_dict[model+".pdb"])
+                    
+                    group.create_dataset("fnat", data=target_dict[model+".pdb"])
+                    # print(999)
+                    # print(model)
                 except:
-                    print('no graph for {}'.format(model))
+                    print('no graph for 1  {}'.format(model))
 
             f5.close()
 
-        except:
-            print('no graph for {}'.format(hdf5))
+        # except:
+        #     print('no graph for 2  {}'.format(hdf5))
