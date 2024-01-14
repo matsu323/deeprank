@@ -28,44 +28,62 @@ pssm_path = './pssm/pssm_mapped_to_pdb'
 # print(structure[0])
 
 
-
+from time import time
 # f5 = h5py.File(hdf5, 'a')
-# database = './1ATN_residue.hdf5'
+graph_path = './1ATN_residue.hdf5'
+graph_path=database = './1ACB_residue.hdf5'
 # add_target(graph_path=database, target_name='fnat',
 #        target_list='./data/target/1ATN/dummy_target.csv')
-# graph_path = './1ATN_residue.hdf5'
+
 # f5 = h5py.File(hdf5, 'a')
 # if os.path.isfile(graph_path):
-#        graphs = [graph_path]
-#        for hdf5 in graphs:
+#     graphs = [graph_path]
+#     for hdf5 in graphs:
 #             #   print(hdf5)
-#               f5 = h5py.File(hdf5, 'a')
-#               for model in f5.keys():
-#                     #  model_gp = f5['{}'.format(model)]
-#                     #  if 'score' not in model_gp:
-#                     #         print("no")
-#                      # print(model)
-#                     #  group = f5['{}/score/'.format(model)]
-#             #          print(group)
-#                      print(f5['{}'.format(model)])
-            #   f5.close()
-            #   f5 = h5py.File(hdf5, 'a')
-            #   print(f5)
-            #   f5.close()
+#         t=time()
+#         f5 = h5py.File(hdf5, 'a')
+#         cnt=0
+#         j=0
+#         for model in f5.keys():
+            
+#             # cnt+=1
+#             if cnt >1000:
+#                 print(time()-t)
+#                 print(j)
+#                 break
+#             i=len(f5['{}/edges'.format(model)][()])
+#             j=max(i,j)
+#             print(f5['{}/score/fnat'.format(model)][()])
+#         f5.close()            
+          
+database = outfile='./1ACB_residue.hdf5'
 from tmp import GINet
 from NeuralNet import NeuralNet
-database = './1ATN_residue.hdf5'
-# database ='./1ACB_residue.hdf5'
+pdb_path = './400data'
+pssm_path = './pssm/pssm_mapped_to_pdb'
+outfile ='400data.hdf5'
+from time import time
+t=time() 
+# GraphHDF5(pdb_path=pdb_path,  pssm_path=pssm_path,biopython=False,
+#           graph_type='residue', outfile=outfile,
+#           nproc=16, tmpdir='./tmpdir')
+# print(t-time())
+# add_target(graph_path=outfile, target_name='fnat',
+#        target_list='./data_in/1ACB/Fnat.dat')
+
+
+database = outfile
 edge_feature=['dist']
-node_feature=['type', 'polarity', 'bsa', 'pssm']
+node_feature=['type', 'polarity', 'bsa','ic',"charge",
+              'pssm']
+# node_feature=['type', 'polarity', 'bsa']
+t0=time()
 pos=['pos']
 target='fnat'
 task='reg' 
-batch_size=2
+batch_size=128
 shuffle=True
 lr=0.001
-
-
 model = NeuralNet(database, GINet,
                node_feature=node_feature,
                edge_feature=edge_feature,
@@ -77,5 +95,7 @@ model = NeuralNet(database, GINet,
                shuffle=shuffle,
                pos=pos
                )
-
+t1=time()
 model.train(nepoch=1,  hdf5='output.hdf5')
+t = time() - t0
+print(t,t1-t0)

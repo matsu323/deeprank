@@ -18,7 +18,7 @@ database = './1ACB_residue.hdf5'
 t = time() - t0
 print(t)
 edge_feature=['dist']
-node_feature=['type', 'polarity', 'bsa','ic'
+node_feature=['type', 'polarity', 'bsa','ic',"charge",
               'pssm']
 # node_feature=['type', 'polarity', 'bsa']
 pos=['pos']

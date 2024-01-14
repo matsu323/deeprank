@@ -38,7 +38,7 @@ class LineGraph(object):
         row, col = self.edge_index
 
         
-        i = torch.arange(row.size(0), dtype=torch.long, device=row.device)
+        i = torch.arange(row.size(0), dtype=torch.long, device='cuda')
 
         count = scatter(torch.ones_like(row), row, dim=0,
                         dim_size=N, reduce='sum')
@@ -83,7 +83,7 @@ class LineGraph(object):
         node_j=node_in[edge_out]
         self.fea=torch.cat([self.x[edge_in],self.x[edge_out]],dim=1)
 
-        # print(self.fea.size())
+        # print(self.x[edge_in].size())
         return self.fea
     # def forward(self):
     #     self.message(self)
@@ -106,14 +106,16 @@ class LineGraph(object):
             fea=self.fea_torelation(i,self.fea.t(),node_out)
             node_out=torch.where(node_out[2:,]==i,node_out,torch.zeros_like(node_out))
             # print(node_out.size(),node_out)
-            out=torch.zeros(self.input_dim*2,len(self.x))
+            num_fea=self.x.size()[1]*2
+            out=torch.zeros(num_fea,len(self.x)).to('cuda')
             # print(node_out.size())
             
-            # print(node_out[1:-1].expand(2,-1).size(),self.fea.t().size(),1211)
+            # print(node_out[1:-1],self.x.size()[1]*2,self.x.size())
             # print(self.fea.t().size(),node_out[1:-1].expand(self.input_dim*2,-1).size())
             # print(node_out[1:-1])
-            
-            update= scatter_add(fea,node_out[1:-1].expand(self.input_dim*2,-1),dim=1,out=out)
+            # print(fea.size(),node_out.size(),out.size(),self.input_dim*2,self.x.size())
+            #out= 7*edgeattr , num edge
+            update= scatter_add(fea,node_out[1:-1].expand(num_fea,-1),dim=1,out=out)
             if i==1:
                 output=update
             else:

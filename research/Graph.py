@@ -8,6 +8,7 @@ from tools.embedding import manifold_embedding
 import community
 import markov_clustering as mc
 import h5py
+# from networkx.convert_matrix import to_scipy_sparse_matrix
 
 
 class Graph(object):
@@ -286,16 +287,16 @@ class Graph(object):
             if method == 'louvain':
                 cluster = community.best_partition(gtmp)
 
-            # elif method == 'mcl':
-            #     matrix = nx.to_scipy_sparse_matrix(gtmp)
-            #     # run MCL with default parameters
-            #     result = mc.run_mcl(matrix)
-            #     mcl_clust = mc.get_clusters(result)    # get clusters
-            #     cluster = {}
-            #     node_key = list(self.nx.nodes.keys())
-            #     for ic, c in enumerate(mcl_clust):
-            #         for node in c:
-            #             cluster[node_key[node]] = ic
+            elif method == 'mcl':
+                matrix = nx.to_scipy_sparse_matrix(gtmp)
+                # run MCL with default parameters
+                result = mc.run_mcl(matrix)
+                mcl_clust = mc.get_clusters(result)    # get clusters
+                cluster = {}
+                node_key = list(self.nx.nodes.keys())
+                for ic, c in enumerate(mcl_clust):
+                    for node in c:
+                        cluster[node_key[node]] = ic
 
         # get the colormap for the clsuter line
         ncluster = np.max([v for _, v in cluster.items()])+1

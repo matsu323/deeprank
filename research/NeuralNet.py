@@ -178,7 +178,7 @@ class NeuralNet(object):
 
         # regression mode
         if self.task == 'reg':
-            self.model = Net(dataset.get(0).num_features, 1, self.num_edge_features).to(self.device)
+            self.model = Net(dataset.get(0).num_features, 1, self.num_edge_features).to('cuda')
 
         # classification mode
         elif self.task == 'class':
@@ -241,17 +241,18 @@ class NeuralNet(object):
 
         # Open output file for writting
         with h5py.File(fname, 'w') as self.f5:
-
+            # print(torch.cuda.is_available())
             # Number of epochs
             self.nepoch = nepoch
 
             # Loop over epochs
             self.data = {}
             for epoch in range(1, nepoch+1):
-
+                # print(self.f5.keys())
                 # Train the model
                 self.model.train()
-
+                # for data in self.train_loader:
+                #     print(data)
                 t0 = time()
                 _out, _y, _loss, self.data['train'] = self._epoch(epoch)
                 t = time() - t0
@@ -409,11 +410,13 @@ class NeuralNet(object):
 
             # get the outputs for export
             if self.task == 'class':
-                pred = F.softmax(pred.cpu().detach(), dim=1)
+                pred = F.softmax(pred.cuda().detach(), dim=1)
                 raw_outputs += pred.tolist()
                 pred = np.argmax(pred, axis=1)
+                #ここ注意
+
             else:
-                pred = pred.cpu().detach().reshape(-1)
+                pred = pred.cuda().detach().reshape(-1)
                 raw_outputs += pred.tolist()
 
             out += pred.tolist()
@@ -450,16 +453,18 @@ class NeuralNet(object):
         data = {'outputs': [], 'raw_outputs' : [], 'targets': [], 'mol': []}
 
         for data_batch in self.train_loader:
+            # print(self.device)
             data_batch = data_batch.to(self.device)
             self.optimizer.zero_grad()
             #ここでグラフ情報がモデルに使われる
-
+            #ここだめここまで
+            # print(self.model(data_batch))
             pred = self.model(data_batch)
             pred, data_batch.y = self.format_output(
                 pred, data_batch.y)
-
+            # print(self.device)
             pred = pred.to(self.device)
-            print(data_batch)
+            # print(data_batch)
             #data_batch.y = data_batch.y.to(self.device)
             if data_batch.y is not None:
                 data_batch.y = data_batch.y.to(self.device)
@@ -479,17 +484,17 @@ class NeuralNet(object):
 
             # get the outputs for export
             if self.task == 'class':
-                pred = F.softmax(pred, dim=1).cpu().detach()
+                pred = F.softmax(pred, dim=1).cuda().detach()
                 raw_outputs += pred.tolist()
                 pred = np.argmax(pred, axis=1)
             else:
-                pred = pred.cpu().detach().reshape(-1)
+                pred = pred.cuda().detach().reshape(-1)
                 raw_outputs += pred.tolist()
-                
-            out += pred.tolist()
+                    
+                out += pred.tolist()
 
-            # get the data
-            data['mol'] += data_batch['mol']
+                # get the data
+                data['mol'] += data_batch['mol']
 
         # save targets and predictions
         if self.task == 'class':

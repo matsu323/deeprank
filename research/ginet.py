@@ -14,9 +14,9 @@ from torch_geometric.nn import max_pool_x
 from torch_geometric.data import DataLoader
 
 # deeprank_gnn import
-from deeprank_gnn.community_pooling import get_preloaded_cluster, community_pooling
-from deeprank_gnn.NeuralNet import NeuralNet
-from deeprank_gnn.DataSet import HDF5DataSet, PreCluster
+from community_pooling import get_preloaded_cluster, community_pooling
+from NeuralNet import NeuralNet
+from DataSet import HDF5DataSet, PreCluster
 
 
 class GINetConvLayer(torch.nn.Module):
@@ -104,15 +104,19 @@ class GINet(torch.nn.Module):
         # first conv block
         data.x = act(self.conv1(
             data.x, data.edge_index, data.edge_attr))
+        print(data.x.size())
         cluster = get_preloaded_cluster(data.cluster0, data.batch)
         data = community_pooling(cluster, data)
+        print(data.x.size())
 
         # second conv block
         data.x = act(self.conv2(
             data.x, data.edge_index, data.edge_attr))
         cluster = get_preloaded_cluster(data.cluster1, data.batch)
+        print(data.x.size())
+        
         x, batch = max_pool_x(cluster, data.x, data.batch)
-
+        
         # INTERNAL INTERACTION GRAPH
         # first conv block
         data_ext.x = act(self.conv1_ext(
