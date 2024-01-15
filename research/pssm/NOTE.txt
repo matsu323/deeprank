@@ -1,0 +1,5 @@
+# Recommended method to generate pssm files:
+https://github.com/DeepRank/PSSMGen
+
+
+
